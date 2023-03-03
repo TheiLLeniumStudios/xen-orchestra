@@ -123,7 +123,7 @@ const createXapiCollection = <T extends XenApiRecord>(type: RawObjectType) => {
     () => fetchAll()
   );
 
-  const subscribe = () => {
+  const subscribe = (): CollectionSubscription<T> => {
     const id = Symbol();
 
     subscriptions.value.add(id);

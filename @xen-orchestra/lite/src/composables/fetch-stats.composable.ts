@@ -51,7 +51,6 @@ export default function useFetchStats<
         if (!stats.value.has(mapKey)) {
           return;
         }
-
         const newStats = await getStats(object.uuid, granularity);
 
         if (newStats === undefined) {
