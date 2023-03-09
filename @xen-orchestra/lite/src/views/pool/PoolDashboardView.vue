@@ -24,6 +24,9 @@
     <div class="item">
       <PoolCpuUsageChart />
     </div>
+    <div class="item full-width">
+      <PoolDashboardTasks />
+    </div>
   </div>
 </template>
 
@@ -32,6 +35,7 @@ export const N_ITEMS = 5;
 </script>
 
 <script lang="ts" setup>
+import PoolDashboardTasks from "@/components/pool/dashboard/PoolDashboardTasks.vue";
 import { useHostMetricsStore } from "@/stores/host-metrics.store";
 import { differenceBy } from "lodash-es";
 import { provide, watch } from "vue";
@@ -132,6 +136,10 @@ runningVms.value.forEach((vm) => vmRegister(vm));
   margin: 0;
   padding: 0.5rem;
   overflow: hidden;
+}
+
+.full-width {
+  column-span: all;
 }
 
 @media (min-width: 768px) {
