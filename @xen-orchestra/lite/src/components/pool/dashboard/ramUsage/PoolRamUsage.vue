@@ -1,35 +1,48 @@
 <template>
-  <!-- TODO: add a loader when data is not fully loaded or undefined -->
-  <!-- TODO: display the NoDataError component in case of a data recovery error -->
-  <LinearChart
-    :data="data"
-    :max-value="customMaxValue"
-    :subtitle="$t('last-week')"
-    :title="$t('pool-ram-usage')"
-    :value-formatter="customValueFormatter"
-  >
-    <template #summary>
-      <SizeStatsSummary :size="currentData.size" :usage="currentData.usage" />
+  <UiCard class="linear-chart" :color="hasError ? 'error' : undefined">
+    <UiCardChartTitle>{{ $t("pool-ram-usage") }} </UiCardChartTitle>
+    <UiCardChartTitle subtitle> {{ $t("last-week") }}</UiCardChartTitle>
+    <NoDataError v-if="hasError" />
+    <template v-else>
+      <UiSpinner v-if="isLoading" class="spinner" />
+      <LinearChart
+        v-else
+        :data="data"
+        :max-value="customMaxValue"
+        :value-formatter="customValueFormatter"
+      >
+        <template #summary>
+          <SizeStatsSummary
+            :size="currentData.size"
+            :usage="currentData.usage"
+          />
+        </template>
+      </LinearChart>
     </template>
-  </LinearChart>
+  </UiCard>
 </template>
 
 <script lang="ts" setup>
-import LinearChart from "@/components/charts/LinearChart.vue";
-import SizeStatsSummary from "@/components/ui/SizeStatsSummary.vue";
-import type { FetchedStats } from "@/composables/fetch-stats.composable";
-import type { HostStats } from "@/libs/xapi-stats";
-import { RRD_STEP_FROM_STRING } from "@/libs/xapi-stats";
-import { useHostStore } from "@/stores/host.store";
-import type { LinearChartData } from "@/types/chart";
-import { sumBy } from "lodash-es";
-import { storeToRefs } from "pinia";
 import { computed, inject } from "vue";
-import { useI18n } from "vue-i18n";
+import type { FetchedStats } from "@/composables/fetch-stats.composable";
 import { formatSize, getHostMemory, isHostRunning } from "@/libs/utils";
+import type { HostStats } from "@/libs/xapi-stats";
+import { isEmpty, sumBy } from "lodash-es";
+import LinearChart from "@/components/charts/LinearChart.vue";
+import type { LinearChartData } from "@/types/chart";
+import NoDataError from "@/components/NoDataError.vue";
+import { RRD_STEP_FROM_STRING } from "@/libs/xapi-stats";
+import SizeStatsSummary from "@/components/ui/SizeStatsSummary.vue";
+import { storeToRefs } from "pinia";
+import UiCard from "@/components/ui/UiCard.vue";
+import UiCardChartTitle from "@/components/ui/UiChartCardTitle.vue";
+import { useHostStore } from "@/stores/host.store";
+import { useI18n } from "vue-i18n";
+import UiSpinner from "@/components/ui/UiSpinner.vue";
 import type { XenApiHost } from "@/libs/xen-api";
 
-const { allRecords: hosts } = storeToRefs(useHostStore());
+const hostStore = useHostStore();
+const { allRecords: hosts, hasError } = storeToRefs(hostStore);
 const { t } = useI18n();
 
 const hostLastWeekStats =
@@ -90,5 +103,34 @@ const data = computed<LinearChartData>(() => {
   ];
 });
 
+const isStatFetched = computed(() => {
+  const stats = hostLastWeekStats?.stats?.value;
+
+  return (
+    !isEmpty(stats) &&
+    stats.every((host) => {
+      const hostStats = host.stats;
+      return (
+        hostStats != null &&
+        hostStats.memory.length === data.value[0].data.length
+      );
+    })
+  );
+});
+
+const isLoading = computed(
+  () => (hostStore.isLoading && !hostStore.hasError) || !isStatFetched.value
+);
+
 const customValueFormatter = (value: number) => String(formatSize(value));
 </script>
+
+<style lang="postcss" scoped>
+.spinner {
+  color: var(--color-extra-blue-base);
+  display: flex;
+  margin: auto;
+  width: 40px;
+  height: 40px;
+}
+</style>

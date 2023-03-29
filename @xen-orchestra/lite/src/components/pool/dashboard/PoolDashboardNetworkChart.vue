@@ -1,18 +1,23 @@
 <template>
-  <!-- TODO: add a loader when data is not fully loaded or undefined -->
-  <!-- TODO: display the NoData component in case of a data recovery error -->
-  <LinearChart
-    :data="data"
-    :max-value="customMaxValue"
-    :subtitle="$t('last-week')"
-    :title="$t('network-throughput')"
-    :value-formatter="customValueFormatter"
-  />
+  <UiCard class="linear-chart" :color="hasError ? 'error' : undefined">
+    <UiCardChartTitle>{{ $t("network-throughput") }} </UiCardChartTitle>
+    <UiCardChartTitle subtitle> {{ $t("last-week") }}</UiCardChartTitle>
+    <NoDataError v-if="hasError" />
+    <template v-else>
+      <UiSpinner v-if="isLoading" class="spinner" />
+      <LinearChart
+        v-else
+        :data="data"
+        :max-value="customMaxValue"
+        :value-formatter="customValueFormatter"
+      />
+    </template>
+  </UiCard>
 </template>
 
 <script lang="ts" setup>
 import { computed, inject } from "vue";
-import { map } from "lodash-es";
+import { isEmpty, map } from "lodash-es";
 import { useI18n } from "vue-i18n";
 import LinearChart from "@/components/charts/LinearChart.vue";
 import type { FetchedStats } from "@/composables/fetch-stats.composable";
@@ -20,9 +25,18 @@ import { formatSize } from "@/libs/utils";
 import type { HostStats } from "@/libs/xapi-stats";
 import type { LinearChartData } from "@/types/chart";
 import { RRD_STEP_FROM_STRING } from "@/libs/xapi-stats";
+import NoDataError from "@/components/NoDataError.vue";
+import { storeToRefs } from "pinia";
+import UiCard from "@/components/ui/UiCard.vue";
+import UiCardChartTitle from "@/components/ui/UiChartCardTitle.vue";
+import UiSpinner from "@/components/ui/UiSpinner.vue";
+import { useHostStore } from "@/stores/host.store";
 import type { XenApiHost } from "@/libs/xen-api";
 
 const { t } = useI18n();
+
+const hostStore = useHostStore();
+const { hasError } = storeToRefs(hostStore);
 
 const hostLastWeekStats =
   inject<FetchedStats<XenApiHost, HostStats>>("hostLastWeekStats");
@@ -80,6 +94,25 @@ const data = computed<LinearChartData>(() => {
   ];
 });
 
+const isStatFetched = computed(() => {
+  const stats = hostLastWeekStats?.stats?.value;
+
+  return (
+    !isEmpty(stats) &&
+    stats.every((host) => {
+      const hostStats = host.stats;
+      return (
+        hostStats != null &&
+        Object.values(hostStats.pifs["rx"])[0].length +
+          Object.values(hostStats.pifs["tx"])[0].length ===
+          data.value[0].data.length + data.value[1].data.length
+      );
+    })
+  );
+});
+
+const isLoading = computed(() => hostStore.isLoading || !isStatFetched.value);
+
 // TODO: improve the way to get the max value of graph
 // See: https://github.com/vatesfr/xen-orchestra/pull/6610/files#r1072237279
 const customMaxValue = computed(
@@ -92,3 +125,13 @@ const customMaxValue = computed(
 
 const customValueFormatter = (value: number) => String(formatSize(value));
 </script>
+
+<style lang="postcss" scoped>
+.spinner {
+  color: var(--color-extra-blue-base);
+  display: flex;
+  margin: auto;
+  width: 40px;
+  height: 40px;
+}
+</style>
