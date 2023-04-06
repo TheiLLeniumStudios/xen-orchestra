@@ -1,34 +1,38 @@
 <template>
-  <UiCard>
+  <UiCard :color="hasError ? 'error' : undefined">
     <UiCardTitle>
-      {{ $t("cpu-provisioning") }}
-      <template #right>
+      {{ $t("cpu-provisioning") }} {{ hasError }}
+      <template v-if="!hasError" #right>
         <!-- TODO: add a tooltip for the warning icon -->
         <UiStatusIcon v-if="state !== 'success'" :state="state" />
       </template>
     </UiCardTitle>
-    <div v-if="isReady" class="progress-item" :class="state">
-      <UiProgressBar color="custom" :value="value" :max-value="maxValue" />
-      <UiProgressScale :max-value="maxValue" unit="%" :steps="1" />
-      <UiProgressLegend :label="$t('vcpus')" :value="`${value}%`" />
-      <UiCardFooter>
-        <template #left>
-          <p>{{ $t("vcpus-used") }}</p>
-          <p class="footer-value">{{ nVCpuInUse }}</p>
-        </template>
-        <template #right>
-          <p>{{ $t("total-cpus") }}</p>
-          <p class="footer-value">{{ nPCpu }}</p>
-        </template>
-      </UiCardFooter>
-    </div>
-    <UiSpinner v-else class="spinner" />
+    <NoDataError v-if="hasError" />
+    <template v-else>
+      <div v-if="isReady" class="progress-item" :class="state">
+        <UiProgressBar color="custom" :value="value" :max-value="maxValue" />
+        <UiProgressScale :max-value="maxValue" unit="%" :steps="1" />
+        <UiProgressLegend :label="$t('vcpus')" :value="`${value}%`" />
+        <UiCardFooter>
+          <template #left>
+            <p>{{ $t("vcpus-used") }}</p>
+            <p class="footer-value">{{ nVCpuInUse }}</p>
+          </template>
+          <template #right>
+            <p>{{ $t("total-cpus") }}</p>
+            <p class="footer-value">{{ nPCpu }}</p>
+          </template>
+        </UiCardFooter>
+      </div>
+      <UiSpinner v-else class="spinner" />
+    </template>
   </UiCard>
 </template>
 
 <script lang="ts" setup>
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
+import NoDataError from "@/components/NoDataError.vue";
 import UiCard from "@/components/ui/UiCard.vue";
 import UiCardFooter from "@/components/ui/UiCardFooter.vue";
 import UiCardTitle from "@/components/ui/UiCardTitle.vue";
@@ -44,10 +48,18 @@ import { useVmStore } from "@/stores/vm.store";
 
 const ACTIVE_STATES = new Set(["Running", "Paused"]);
 
-const { allRecords: hosts, isReady: hostStoreIsReady } = storeToRefs(
-  useHostStore()
-);
-const { allRecords: vms, isReady: vmStoreIsReady } = storeToRefs(useVmStore());
+const {
+  allRecords: hosts,
+  hasError: hostStoreHasError,
+  isReady: hostStoreIsReady,
+} = storeToRefs(useHostStore());
+
+const {
+  allRecords: vms,
+  hasError: vmStoreHasError,
+  isReady: vmStoreIsReady,
+} = storeToRefs(useVmStore());
+
 const vmMetricsStore = useVmMetricsStore();
 
 const nPCpu = computed(() =>
@@ -73,6 +85,9 @@ const maxValue = computed(() => Math.ceil(value.value / 100) * 100);
 const state = computed(() => (value.value > 100 ? "warning" : "success"));
 const isReady = computed(
   () => vmStoreIsReady.value && vmMetricsStore.isReady && hostStoreIsReady.value
+);
+const hasError = computed(
+  () => hostStoreHasError.value || vmStoreHasError.value
 );
 </script>
 
