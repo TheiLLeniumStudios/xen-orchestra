@@ -43,7 +43,12 @@ export const useVmStore = defineStore("vm", () => {
       vmSubscription.records.value.filter((vm) => vm.power_state === "Running")
     );
 
-    const getStats = (id: string, granularity: GRANULARITY) => {
+    const getStats = (
+      id: string,
+      granularity: GRANULARITY,
+      ignoreExpired = false,
+      { abortSignal }: { abortSignal?: AbortSignal }
+    ) => {
       requireSubscription(hostSubscription, "host");
 
       const xenApiStore = useXenApiStore();
@@ -65,7 +70,9 @@ export const useVmStore = defineStore("vm", () => {
       }
 
       return xenApiStore.getXapiStats()._getAndUpdateStats({
+        abortSignal,
         host,
+        ignoreExpired,
         uuid: vm.uuid,
         granularity,
       });

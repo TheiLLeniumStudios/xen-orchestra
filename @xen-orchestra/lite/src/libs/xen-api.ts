@@ -239,7 +239,11 @@ export default class XenApi {
 
   async getResource(
     pathname: string,
-    { host, query }: { host: XenApiHost; query: any }
+    {
+      abortSignal,
+      host,
+      query,
+    }: { abortSignal?: AbortSignal; host: XenApiHost; query: any }
   ) {
     const url = new URL("http://localhost");
     url.protocol = window.location.protocol;
@@ -250,7 +254,7 @@ export default class XenApi {
       session_id: this.#sessionId,
     }).toString();
 
-    return fetch(url);
+    return fetch(url, { signal: abortSignal });
   }
 
   async loadRecords<T extends XenApiRecord>(type: RawObjectType): Promise<T[]> {

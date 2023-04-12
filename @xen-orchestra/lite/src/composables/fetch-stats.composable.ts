@@ -10,6 +10,7 @@ import { type Pausable, promiseTimeout, useTimeoutPoll } from "@vueuse/core";
 import { computed, type ComputedRef, onUnmounted, ref } from "vue";
 
 export type Stat<T> = {
+  canBeExpired: boolean;
   id: string;
   name: string;
   stats: T | undefined;
@@ -18,7 +19,9 @@ export type Stat<T> = {
 
 type GetStats<T extends HostStats | VmStats> = (
   uuid: string,
-  granularity: GRANULARITY
+  granularity: GRANULARITY,
+  ignoreExpired: boolean,
+  opts: { abortSignal?: AbortSignal }
 ) => Promise<XapiStatsResponse<T>> | undefined;
 
 export type FetchedStats<
@@ -38,6 +41,7 @@ export default function useFetchStats<
 >(getStats: GetStats<S>, granularity: GRANULARITY): FetchedStats<T, S> {
   const stats = ref<Map<string, Stat<S>>>(new Map());
   const timestamp = ref<number[]>([0, 0]);
+  const abortController = new AbortController();
 
   const register = (object: T) => {
     const mapKey = `${object.uuid}-${granularity}`;
@@ -46,13 +50,18 @@ export default function useFetchStats<
       return;
     }
 
+    const ignoreExpired = computed(() => !stats.value.has(mapKey));
+
     const pausable = useTimeoutPoll(
       async () => {
-        if (!stats.value.has(mapKey)) {
-          return;
-        }
-
-        const newStats = await getStats(object.uuid, granularity);
+        const newStats = (await getStats(
+          object.uuid,
+          granularity,
+          ignoreExpired.value,
+          {
+            abortSignal: abortController.signal,
+          }
+        )) as XapiStatsResponse<S>;
 
         if (newStats === undefined) {
           return;
@@ -66,6 +75,7 @@ export default function useFetchStats<
         ];
 
         stats.value.get(mapKey)!.stats = newStats.stats;
+        stats.value.get(mapKey)!.canBeExpired = newStats.canBeExpired;
         await promiseTimeout(newStats.interval * 1000);
       },
       0,
@@ -73,6 +83,7 @@ export default function useFetchStats<
     );
 
     stats.value.set(mapKey, {
+      canBeExpired: false,
       id: object.uuid,
       name: object.name_label,
       stats: undefined,
@@ -87,6 +98,7 @@ export default function useFetchStats<
   };
 
   onUnmounted(() => {
+    abortController.abort();
     stats.value.forEach((stat) => stat.pausable.pause());
   });
 

@@ -34,7 +34,12 @@ export const useHostStore = defineStore("host", () => {
       );
     });
 
-    const getStats = (hostUuid: string, granularity: GRANULARITY) => {
+    const getStats = (
+      hostUuid: string,
+      granularity: GRANULARITY,
+      ignoreExpired = false,
+      { abortSignal }: { abortSignal?: AbortSignal }
+    ) => {
       const host = hostSubscription.getByUuid(hostUuid);
 
       if (host === undefined) {
@@ -46,7 +51,9 @@ export const useHostStore = defineStore("host", () => {
         : undefined;
 
       return xapiStats?._getAndUpdateStats({
+        abortSignal,
         host,
+        ignoreExpired,
         uuid: host.uuid,
         granularity,
       });
