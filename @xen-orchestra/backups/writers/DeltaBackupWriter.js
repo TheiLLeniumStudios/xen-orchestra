@@ -1,7 +1,6 @@
 'use strict'
 
 const assert = require('assert')
-const map = require('lodash/map.js')
 const mapValues = require('lodash/mapValues.js')
 const ignoreErrors = require('promise-toolbox/ignoreErrors')
 const { asyncMap } = require('@xen-orchestra/async-map')
@@ -20,6 +19,7 @@ const { AbstractDeltaWriter } = require('./_AbstractDeltaWriter.js')
 const { checkVhd } = require('./_checkVhd.js')
 const { packUuid } = require('./_packUuid.js')
 const { Disposable } = require('promise-toolbox')
+const { asyncEach } = require('@vates/async-each')
 
 const { warn } = createLogger('xo:backups:DeltaBackupWriter')
 
@@ -174,8 +174,9 @@ class DeltaBackupWriter extends MixinBackupWriter(AbstractDeltaWriter) {
 
     const { size } = await Task.run({ name: 'transfer' }, async () => {
       let transferSize = 0
-      await Promise.all(
-        map(deltaExport.vdis, async (vdi, id) => {
+      await asyncEach(
+        Object.entries(deltaExport.vdis),
+        async ([id, vdi]) => {
           const path = `${this._vmBackupDir}/${vhds[id]}`
 
           const isDelta = vdi.other_config['xo:base_delta'] !== undefined
@@ -217,8 +218,12 @@ class DeltaBackupWriter extends MixinBackupWriter(AbstractDeltaWriter) {
             await vhd.readBlockAllocationTable() // required by writeFooter()
             await vhd.writeFooter()
           })
-        })
+        },
+        {
+          concurrency: 4,
+        }
       )
+
       return { size: transferSize }
     })
     metadataContent.size = size
