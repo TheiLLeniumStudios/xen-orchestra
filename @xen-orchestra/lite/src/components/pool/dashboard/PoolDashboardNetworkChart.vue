@@ -1,6 +1,6 @@
 <template>
   <UiCard class="linear-chart" :color="hasError ? 'error' : undefined">
-    <UiCardChartTitle>{{ $t("network-throughput") }} </UiCardChartTitle>
+    <UiCardChartTitle>{{ $t("network-throughput") }}</UiCardChartTitle>
     <UiCardChartTitle subtitle> {{ $t("last-week") }}</UiCardChartTitle>
     <NoDataError v-if="hasError" />
     <UiSpinner v-else-if="isLoading" class="spinner" />
