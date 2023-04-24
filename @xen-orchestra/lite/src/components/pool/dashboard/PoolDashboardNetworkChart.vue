@@ -3,15 +3,13 @@
     <UiCardChartTitle>{{ $t("network-throughput") }} </UiCardChartTitle>
     <UiCardChartTitle subtitle> {{ $t("last-week") }}</UiCardChartTitle>
     <NoDataError v-if="hasError" />
-    <template v-else>
-      <UiSpinner v-if="isLoading" class="spinner" />
-      <LinearChart
-        v-else
-        :data="data"
-        :max-value="customMaxValue"
-        :value-formatter="customValueFormatter"
-      />
-    </template>
+    <UiSpinner v-else-if="isLoading" class="spinner" />
+    <LinearChart
+      v-else
+      :data="data"
+      :max-value="customMaxValue"
+      :value-formatter="customValueFormatter"
+    />
   </UiCard>
 </template>
 
