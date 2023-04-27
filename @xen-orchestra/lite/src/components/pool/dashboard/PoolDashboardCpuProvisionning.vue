@@ -8,24 +8,22 @@
       </template>
     </UiCardTitle>
     <NoDataError v-if="hasError" />
-    <template v-else>
-      <div v-if="isReady" :class="state" class="progress-item">
-        <UiProgressBar :max-value="maxValue" :value="value" color="custom" />
-        <UiProgressScale :max-value="maxValue" :steps="1" unit="%" />
-        <UiProgressLegend :label="$t('vcpus')" :value="`${value}%`" />
-        <UiCardFooter>
-          <template #left>
-            <p>{{ $t("vcpus-used") }}</p>
-            <p class="footer-value">{{ nVCpuInUse }}</p>
-          </template>
-          <template #right>
-            <p>{{ $t("total-cpus") }}</p>
-            <p class="footer-value">{{ nPCpu }}</p>
-          </template>
-        </UiCardFooter>
-      </div>
-      <UiSpinner v-else class="spinner" />
-    </template>
+    <div v-else-if="isReady" :class="state" class="progress-item">
+      <UiProgressBar :max-value="maxValue" :value="value" color="custom" />
+      <UiProgressScale :max-value="maxValue" :steps="1" unit="%" />
+      <UiProgressLegend :label="$t('vcpus')" :value="`${value}%`" />
+      <UiCardFooter>
+        <template #left>
+          <p>{{ $t("vcpus-used") }}</p>
+          <p class="footer-value">{{ nVCpuInUse }}</p>
+        </template>
+        <template #right>
+          <p>{{ $t("total-cpus") }}</p>
+          <p class="footer-value">{{ nPCpu }}</p>
+        </template>
+      </UiCardFooter>
+    </div>
+    <UiSpinner v-else class="spinner" />
   </UiCard>
 </template>
 
