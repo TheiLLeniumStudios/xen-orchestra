@@ -7,6 +7,8 @@
 
 > Users must be able to say: “Nice enhancement, I'm eager to test it”
 
+- [Self service] Add default tags to all VM that will be created by a self service (PR [#6810](https://github.com/vatesfr/xen-orchestra/pull/6810))
+
 ### Bug fixes
 
 > Users must be able to say: “I had this issue, happy to know it's fixed”
@@ -28,5 +30,6 @@
 <!--packages-start-->
 
 - xo-server minor
+- xo-web minor
 
 <!--packages-end-->
