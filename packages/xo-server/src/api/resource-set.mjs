@@ -1,18 +1,6 @@
-export function create({ name, subjects, objects, limits }) {
-  return this.createResourceSet(name, subjects, objects, limits)
-}
-
-create.permission = 'admin'
-
-create.params = {
-  name: {
-    type: 'string',
-  },
-  subjects: {
-    type: 'array',
-    items: {
-      type: 'string',
-    },
+const COMMON_PARAMS = {
+  limits: {
+    type: 'object',
     optional: true,
   },
   objects: {
@@ -22,9 +10,32 @@ create.params = {
     },
     optional: true,
   },
-  limits: {
-    type: 'object',
+  subjects: {
+    type: 'array',
+    items: {
+      type: 'string',
+    },
     optional: true,
+  },
+  tags: {
+    type: 'array',
+    items: {
+      type: 'string',
+    },
+    optional: true,
+  },
+}
+
+export function create({ name, subjects, objects, tags, limits }) {
+  return this.createResourceSet(name, subjects, objects, limits, tags)
+}
+
+create.permission = 'admin'
+
+create.params = {
+  ...COMMON_PARAMS,
+  name: {
+    type: 'string',
   },
 }
 
@@ -45,11 +56,12 @@ delete_.params = {
 
 // -------------------------------------------------------------------
 
-export function set({ id, name, subjects, objects, ipPools, limits }) {
+export function set({ id, name, subjects, objects, tags, ipPools, limits }) {
   return this.updateResourceSet(id, {
     limits,
     name,
     objects,
+    tags,
     ipPools,
     subjects,
   })
@@ -58,26 +70,9 @@ export function set({ id, name, subjects, objects, ipPools, limits }) {
 set.permission = 'admin'
 
 set.params = {
+  ...COMMON_PARAMS,
   id: {
     type: 'string',
-  },
-  name: {
-    type: 'string',
-    optional: true,
-  },
-  subjects: {
-    type: 'array',
-    items: {
-      type: 'string',
-    },
-    optional: true,
-  },
-  objects: {
-    type: 'array',
-    items: {
-      type: 'string',
-    },
-    optional: true,
   },
   ipPools: {
     type: 'array',
@@ -86,8 +81,8 @@ set.params = {
     },
     optional: true,
   },
-  limits: {
-    type: 'object',
+  name: {
+    type: 'string',
     optional: true,
   },
 }

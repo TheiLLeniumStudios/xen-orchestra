@@ -65,6 +65,7 @@ const normalize = set => ({
   name: set.name || '',
   objects: set.objects || [],
   subjects: set.subjects || [],
+  tags: set.tags || [],
 })
 
 // ===================================================================
@@ -133,13 +134,14 @@ export default class {
     return vm.type === 'VM-snapshot' ? this.computeVmSnapshotResourcesUsage(vm) : this.computeVmResourcesUsage(vm)
   }
 
-  async createResourceSet(name, subjects = undefined, objects = undefined, limits = undefined) {
+  async createResourceSet(name, subjects = undefined, objects = undefined, limits = undefined, tags = undefined) {
     const id = await this._generateId()
     const set = normalize({
       id,
       name,
       objects,
       subjects,
+      tags,
       limits,
     })
 
@@ -167,7 +169,14 @@ export default class {
   async updateResourceSet(
     $defer,
     id,
-    { name = undefined, subjects = undefined, objects = undefined, limits = undefined, ipPools = undefined }
+    {
+      name = undefined,
+      subjects = undefined,
+      objects = undefined,
+      tags = undefined,
+      limits = undefined,
+      ipPools = undefined,
+    }
   ) {
     const set = await this.getResourceSet(id)
     if (name) {
@@ -221,6 +230,9 @@ export default class {
     }
     if (ipPools) {
       set.ipPools = ipPools
+    }
+    if (tags !== undefined) {
+      set.tags = tags
     }
 
     await this._save(set)
